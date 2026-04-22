@@ -55,3 +55,9 @@ Tracks all changes made to this fork beyond the upstream plugin.
 - **Status:** done
 - **Issue:** No way to export highlights out of KoReader into a readable format for note-taking apps like Obsidian.
 - **Fix:** Added a menu option that writes all highlights for the current book to a `.md` file, grouped by chapter.
+
+### 8. Tailscale support — sync from anywhere
+
+- **Status:** done
+- **Issue:** The WebDAV server was only reachable on the local network. Syncing away from home was not possible.
+- **Fix:** Documented Tailscale setup alongside the WebDAV server. Using the Mac's Tailscale IP instead of a local IP makes the server reachable from anywhere over a secure WireGuard tunnel — no port forwarding, no public exposure. KoReader runs on jailbroken/rooted devices (Kindle, Kobo, Boox, Android) which can all run Tailscale.

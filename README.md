@@ -34,6 +34,7 @@ More devices may work — feel free to open an issue or pull request with your r
 - 📅 **Smart Updates:** Syncs highlight edits based on the latest timestamp.
 - 🕐 **Last Synced Indicator:** The menu shows when the last successful sync occurred.
 - 📄 **Export to Markdown:** Export all highlights for the current book to a `.md` file grouped by chapter, ready for Obsidian or any note-taking app.
+- 🌐 **Tailscale support:** Sync from anywhere over a secure WireGuard tunnel — no port forwarding required.
 - ⚡ **Lightweight** and easy to install.
 
 ---
@@ -93,15 +94,15 @@ Pull requests and issue reports are welcome! If you have ideas or find bugs, fee
 
 ---
 
-## 🖥️ Self-Hosted WebDAV Server Setup (Mac)
+## 🖥️ Self-Hosted WebDAV Server Setup
 
-If you don't have a WebDAV server, you can run one locally on your Mac using Docker.
+If you don't have a WebDAV server, you can run one locally using Docker (works on macOS, Linux, and Windows).
 
 ### How It Works
 
 ```text
-KoReader Device  ──(WebDAV / local network)──►  Docker WebDAV Server  ──►  ~/Desktop/KoReader/
-     (e-reader)                                      (port 8080)               (your Mac folder)
+KoReader Device  ──(WebDAV / local network)──►  Docker WebDAV Server  ──►  ./koreader-data/
+     (e-reader)                                      (port 8080)            (next to docker-compose.yml)
 ```
 
 ### docker-compose.yml
@@ -143,12 +144,28 @@ docker compose down
 docker compose logs -f
 ```
 
-### Connecting KoReader
+### Connecting KoReader (local network)
 
-1. Find your Mac's local IP: **System Settings → Wi-Fi → Details**
+1. Find your host machine's local IP:
+   - **macOS:** System Settings → Wi-Fi → Details
+   - **Linux:** `ip addr` or `hostname -I`
+   - **Windows:** `ipconfig` in a terminal
 2. In KoReader: **Tools → Cloud Storage → WebDAV**
-3. Enter `http://<your-mac-ip>:8080`, your username, and password
+3. Enter `http://<host-ip>:8080`, your username, and password
 4. Tap **Sync**
+
+### Connecting KoReader from anywhere via Tailscale
+
+KoReader runs on jailbroken/rooted devices (Kindle, Kobo, Boox, Android) — all of which can run Tailscale. This lets you sync to your host machine over a secure WireGuard tunnel from anywhere, with no port forwarding and no public exposure.
+
+1. Install [Tailscale](https://tailscale.com) on your host machine and on your KoReader device
+2. Sign in to the same Tailscale account on both
+3. Find your host's Tailscale IP (e.g. `100.x.x.x`) in the Tailscale app or dashboard
+4. In KoReader: **Tools → Cloud Storage → WebDAV**
+5. Enter `http://100.x.x.x:8080`, your username, and password
+6. Tap **Sync** — works from any network
+
+> The WebDAV server does not need any firewall changes or port forwarding. Tailscale handles the secure tunnel automatically.
 
 ### The `.sdr.json` Data Format
 
