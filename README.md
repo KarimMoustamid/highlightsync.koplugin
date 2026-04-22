@@ -1,44 +1,108 @@
-# KoReader WebDAV Sync Server
+# 📚 HighlightSync Plugin for KOReader
 
-## Overview
+**HighlightSync** is a plugin for [KOReader](https://github.com/koreader/koreader) that **synchronizes and merges your highlights, notes, and bookmarks** across multiple devices or cloud backup locations. It allows you to sync highlights made offline on two or more devices, ensuring that no data is lost when syncing.
 
-This project runs a local **WebDAV server** on your Mac that allows your KoReader e-reader device to sync reading data — highlights, bookmarks, and reading progress — over your local network.
-
-KoReader is an open-source document reader available on Kindle, Kobo, Android, and other platforms. It stores reading metadata (highlights, notes, progress) in sidecar `.sdr` directories alongside each book file. By connecting KoReader to this WebDAV server, that data is automatically backed up and made accessible on your Mac.
+Supports popular cloud services like **WebDAV** and **Dropbox**, helping you keep your annotations consistent no matter which device you're reading on.
 
 ---
 
-## How It Works
+## ⚠️ Beta Warning
 
-```
+This plugin is currently in **beta**. Use at your own risk.
+
+While it has been tested on several platforms, the author is **not responsible for any data loss**. Please back up your annotations regularly.
+
+---
+
+## ✅ Tested Devices
+
+- KOReader on **Linux**
+- **Boox Go 6**
+- **Boox Go 10.3**
+- **Android 15**
+
+More devices may work — feel free to open an issue or pull request with your results!
+
+---
+
+## ✨ Features
+
+- 🔄 **Automatic & Manual Sync:** Configurable options to sync automatically on **book open, close, or resume**, or sync manually via menu/gestures.
+- 🛡️ **Conflict-free Merging:** Highlights made offline on different devices are combined intelligently without overwriting each other.
+- 📝 **True Offline Freedom:** Read and annotate on your Kindle and Boox separately; sync them all when you get Wi-Fi.
+- ☁️ Works with **WebDAV** and **Dropbox**.
+- 📅 **Smart Updates:** Syncs highlight edits based on the latest timestamp.
+- ⚡ **Lightweight** and easy to install.
+
+---
+
+## 📥 Installation
+
+To install the plugin:
+
+1. Download the **latest release** from the [GitHub repository](https://github.com/gitalexcampos/koreader-Highlight-Sync/releases).
+2. **Extract the downloaded file** and locate the `highlightsync.koplugin` folder.
+3. Copy the `highlightsync.koplugin` folder.
+4. Place it inside the `koreader/plugins/` directory on your KOReader device.
+
+---
+
+## 🔧 Setup
+
+1. Open KOReader.
+2. Go to the **Main Menu > Tools > Highlight Sync > Sync Cloud**.
+3. Set up your **cloud service** (WebDAV or Dropbox).
+4. Select the **folder** where your **JSON files** containing the highlights of your books are or will be stored. (This folder **does not need** to be the same as your ebooks folder.)
+   ⚠️ **If you change this folder after you've already synced a book**, you **must manually move the book's JSON file** from the old folder to the new one in your cloud service. If the plugin doesn't find the file in the new location, it will assume that the highlights were **deleted on another device** and will remove them during sync.
+5. Configure your preferred **Automatic Sync** settings (Open, Close, or Resume) in the settings menu, or use the manual **Sync Highlights** button.
+
+---
+
+## ⚠️ Important Configuration Notes
+
+### 📂 Hash-based Metadata (Sidecar Folder)
+
+If you use KOReader's **"Hash based"** setting for metadata location (instead of the default sidecar folder next to the file), the plugin will generate the sync filename based on that hash (e.g., `c5a2f1...json`) instead of the book title.
+
+**Crucial:** You must ensure **ALL your devices use the same metadata setting**.
+
+- If Device A uses **Hash-based** and Device B uses **File location**, Device A will look for a hashed filename while Device B looks for the book title filename. They will **not** see each other's highlights.
+
+### ⏳ Sync Freeze & Reload
+
+During synchronization, you might experience a **brief freeze** (UI blocking) for a few seconds.
+
+- This is normal behavior due to KOReader's single-core architecture handling the network request and JSON processing.
+- After syncing, the plugin will trigger a **document reload**. This is necessary for KOReader to visually render the newly imported highlights on the page.
+
+---
+
+## 🛠 Known Limitations
+
+- The **book names** (or hashes, if configured) on the devices must be **exactly the same** for syncing to work correctly.
+- If two highlights start at the same position but end at different ones, the **most recent one is kept**.
+- This is an early version — feedback is welcome!
+
+---
+
+## 🤝 Contributing
+
+Pull requests and issue reports are welcome! If you have ideas or find bugs, feel free to open an issue.
+
+---
+
+## 🖥️ Self-Hosted WebDAV Server Setup (Mac)
+
+If you don't have a WebDAV server, you can run one locally on your Mac using Docker.
+
+### How It Works
+
+```text
 KoReader Device  ──(WebDAV / local network)──►  Docker WebDAV Server  ──►  ~/Desktop/KoReader/
      (e-reader)                                      (port 8080)               (your Mac folder)
 ```
 
-1. Docker runs a WebDAV server (`bytemark/webdav` image) on port `8080`
-2. The server exposes your local `~/Desktop/KoReader/` folder over WebDAV
-3. KoReader connects to `http://<your-mac-ip>:8080` using the configured credentials
-4. Every time KoReader syncs, it writes `.sdr` sidecar data into that folder
-5. A companion script (or manual process) converts those `.sdr` files into clean `.json` files stored in `data/Koreader/`
-
----
-
-## Project Structure
-
-```
-KoReader/
-├── docker-compose.yml       # WebDAV server configuration
-├── DavLock / DavLock.*      # WebDAV lock files (auto-generated, safe to ignore)
-└── data/
-    └── Koreader/
-        └── *.sdr.json       # Parsed highlight/annotation data per book
-```
-
----
-
-## Configuration
-
-The WebDAV server is defined in [docker-compose.yml](docker-compose.yml):
+### docker-compose.yml
 
 ```yaml
 services:
@@ -49,24 +113,15 @@ services:
     ports:
       - "8080:80"
     environment:
-      - USERNAME=karim
-      - PASSWORD=password123
+      - USERNAME=your_username
+      - PASSWORD=your_password
     volumes:
-      - /Users/karimmoustamid/Desktop/KoReader:/var/lib/dav
+      - /path/to/your/KoReader/folder:/var/lib/dav
 ```
-
-| Setting | Value |
-|---|---|
-| Port | `8080` (mapped from container port 80) |
-| Username | `karim` |
-| Password | `password123` |
-| Synced folder | `~/Desktop/KoReader/` |
 
 > **Security note:** Change the password before exposing this server outside your local network.
 
----
-
-## Starting the Server
+### Commands
 
 ```bash
 # Start (detached)
@@ -79,23 +134,16 @@ docker compose down
 docker compose logs -f
 ```
 
----
+### Connecting KoReader
 
-## Connecting KoReader to the Server
+1. Find your Mac's local IP: **System Settings → Wi-Fi → Details**
+2. In KoReader: **Tools → Cloud Storage → WebDAV**
+3. Enter `http://<your-mac-ip>:8080`, your username, and password
+4. Tap **Sync**
 
-1. Find your Mac's local IP address: **System Settings → Wi-Fi → Details**
-2. In KoReader, go to: **Tools → Cloud Storage → WebDAV**
-3. Enter the server details:
-   - **URL:** `http://<your-mac-ip>:8080`
-   - **Username:** `karim`
-   - **Password:** `password123`
-4. Tap **Sync** — KoReader will push its sidecar data to your Mac
+### The `.sdr.json` Data Format
 
----
-
-## The `.sdr.json` Data Format
-
-Each `.sdr.json` file in `data/Koreader/` contains an array of highlight objects for a given book. Example:
+Each synced file contains an array of highlight objects:
 
 ```json
 {
@@ -110,7 +158,7 @@ Each `.sdr.json` file in `data/Koreader/` contains an array of highlight objects
 ```
 
 | Field | Description |
-|---|---|
+| --- | --- |
 | `text` | The highlighted passage |
 | `chapter` | Chapter name where the highlight was made |
 | `pageno` | Page number |
