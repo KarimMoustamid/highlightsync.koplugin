@@ -1,0 +1,14 @@
+services:
+  webdav:
+    image: bytemark/webdav
+    container_name: koreader_webdav
+    restart: always
+    ports:
+      - "8080:80"
+    environment:
+      # Change these to your preference
+      - USERNAME=karim
+      - PASSWORD=password123
+    volumes:
+      # Map your existing KoReader folder to the container
+      - /Users/karimmoustamid/Desktop/KoReader:/var/lib/dav
