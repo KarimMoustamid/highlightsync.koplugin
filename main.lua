@@ -15,6 +15,37 @@ local logger = require("logger")
 
 local is_reloading_due_to_sync = false
 
+local function export_highlights_to_markdown(annotations, book_title, output_path)
+    local file = io.open(output_path, "w")
+    if not file then return false end
+
+    file:write("# " .. (book_title or "Highlights") .. "\n\n")
+
+    -- Group by chapter
+    local chapters = {}
+    local chapter_order = {}
+    for _, h in ipairs(annotations) do
+        local ch = h.chapter or "Uncategorized"
+        if not chapters[ch] then
+            chapters[ch] = {}
+            chapter_order[#chapter_order + 1] = ch
+        end
+        chapters[ch][#chapters[ch] + 1] = h
+    end
+
+    for _, ch in ipairs(chapter_order) do
+        file:write("## " .. ch .. "\n\n")
+        for _, h in ipairs(chapters[ch]) do
+            if h.text and h.text ~= "" then
+                file:write("> " .. h.text .. "\n\n")
+            end
+        end
+    end
+
+    file:close()
+    return true
+end
+
 
 
 local function dir_exists(path)
@@ -189,26 +220,27 @@ end
 
 
 function Highlightsync:onSync(local_path, cached_path, income_path, reload)
-
-    local local_highlights  = DataAnnotations --read_json_file(local_path)  or {}
+    local local_highlights  = self.ui.annotation.annotations
     local cached_highlights = read_json_file(cached_path) or {}
     local income_highlights = read_json_file(income_path) or {}
 
-    local annotations = Merge.Merge_highlights(local_highlights,income_highlights,cached_highlights)
+    local annotations = Merge.Merge_highlights(local_highlights, income_highlights, cached_highlights)
 
-    write_json_file(SidecarDir .. "/" .. FileName .. ".json", annotations) -- Save annotations local
-    DataAnnotations = annotations
+    write_json_file(self.sync_sidecar_dir .. "/" .. self.sync_filename .. ".json", annotations)
+
+    self.settings.last_sync = os.date("%Y-%m-%d %H:%M")
+    G_reader_settings:saveSetting("highlight_sync", self.settings) -- luacheck: ignore
 
     if self.ui and self.ui.annotation then
-        self.ui.annotation.annotations = DataAnnotations
+        self.ui.annotation.annotations = annotations
         if reload then
             is_reloading_due_to_sync = true
             UIManager:tickAfterNext(function()
-            self.ui:reloadDocument()
+                self.ui:reloadDocument()
             end)
         end
     end
-  
+
     return true
 end
 
@@ -246,19 +278,18 @@ function Highlightsync:SyncBookHighlights(silent, reload)
 
     local doc_path = self.document and self.document.file
     local doc_settings = self.ui and self.ui.doc_settings
-    SidecarDir = doc_settings:getSidecarDir(doc_path)
-    ensure_dir_exists(SidecarDir)
-    DataAnnotations = self.ui.annotation.annotations -- self.ui.doc_settings.data.annotations
+    self.sync_sidecar_dir = doc_settings:getSidecarDir(doc_path)
+    ensure_dir_exists(self.sync_sidecar_dir)
 
-    Raw_name = SidecarDir:match("([^/]+)/*$")
-    FileName = sanitize_filename(Raw_name)
+    local raw_name = self.sync_sidecar_dir:match("([^/]+)/*$")
+    self.sync_filename = sanitize_filename(raw_name)
 
-    write_json_file(SidecarDir .. "/" .. FileName .. ".json", self.ui.annotation.annotations) -- Save annotations local
+    write_json_file(self.sync_sidecar_dir .. "/" .. self.sync_filename .. ".json", self.ui.annotation.annotations)
 
-    SyncService.sync(self.settings.sync_server, SidecarDir .. "/" .. FileName .. ".json", 
+    SyncService.sync(self.settings.sync_server, self.sync_sidecar_dir .. "/" .. self.sync_filename .. ".json",
     function(local_path, cached_path, income_path)
         local success = self:onSync(local_path, cached_path, income_path, reload)
-        self.is_syncing = false 
+        self.is_syncing = false
         return success
     end,
     silent
@@ -346,7 +377,38 @@ function Highlightsync:addToMainMenu(menu_items)
                 enabled_func = function() return self.canSync(self) end
             },
             {
-                text = _("Settings"), 
+                text_func = function()
+                    local last = self.settings.last_sync
+                    return last and T(_("Last synced: %1"), last) or _("Last synced: never")
+                end,
+                enabled_func = function() return false end,
+            },
+            {
+                text = _("Export Highlights to Markdown"),
+                callback = function()
+                    if not self:is_doc() then return end
+                    local annotations = self.ui.annotation.annotations
+                    if not annotations or #annotations == 0 then
+                        UIManager:show(InfoMessage:new{ text = _("No highlights to export.") })
+                        return
+                    end
+                    local doc_path = self.document.file
+                    local doc_settings = self.ui.doc_settings
+                    local sidecar_dir = doc_settings:getSidecarDir(doc_path)
+                    ensure_dir_exists(sidecar_dir)
+                    local raw_name = sidecar_dir:match("([^/]+)/*$") or "highlights"
+                    local output_path = sidecar_dir .. "/" .. raw_name .. ".md"
+                    local title = self.document:getProps().title or raw_name
+                    if export_highlights_to_markdown(annotations, title, output_path) then
+                        UIManager:show(InfoMessage:new{ text = T(_("Exported to:\n%1"), output_path) })
+                    else
+                        UIManager:show(InfoMessage:new{ text = _("Export failed.") })
+                    end
+                end,
+                enabled_func = function() return self:is_doc() end,
+            },
+            {
+                text = _("Settings"),
                 sub_item_table = {  
                     {
                         text = _("Sync on Book Open"),

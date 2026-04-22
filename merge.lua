@@ -51,7 +51,7 @@ local function merge_highlights(local_annotations, server_annotations, last_sync
 
     local merged = {}
 
-    -- Processa os highlights locais
+    -- Process local highlights
     for key, local_highlight in pairs(local_map) do
         local server_highlight = server_map[key]
         local last_sync_highlight = last_sync_map[key]
@@ -60,10 +60,10 @@ local function merge_highlights(local_annotations, server_annotations, last_sync
         end
     end
 
-    -- Processa highlights do servidor
+    -- Process server highlights
     for key, server_highlight in pairs(server_map) do
         if last_sync_map[key] ~= nil and local_map[key] == nil then
-            -- foi deletado localmente, ignorar
+            -- deleted locally, skip
         else
             if not local_map[key] then
                 merged[key] = server_highlight
@@ -73,13 +73,13 @@ local function merge_highlights(local_annotations, server_annotations, last_sync
         end
     end
 
-    -- Converte o resultado de volta para array
+    -- Convert result back to array
     local merged_annotations = {}
     for _, h in pairs(merged) do
         merged_annotations[#merged_annotations+1] = h
     end
 
-    -- Ordenação simples por pageno e pos0
+    -- Sort by pageno then pos0
     table.sort(merged_annotations, function(a, b)
         if a.pageno ~= b.pageno then
             return (a.pageno or 0) < (b.pageno or 0)
@@ -93,12 +93,12 @@ local function merge_highlights(local_annotations, server_annotations, last_sync
         if type(a.pos0) == "table" then
           if type(b.pos0) == "table" then
             return a.pos0.y < b.pos0.y or
-                  (a.pos0.y == b.pos0.y and a.pos0.x < b.pos0.y)
+                  (a.pos0.y == b.pos0.y and a.pos0.x < b.pos0.x)
           end
-          -- Posistions can't be compared
+          -- Positions can't be compared
           return false
         elseif type(b.pos0) == "table" then
-          -- Posistions can't be compared
+          -- Positions can't be compared
           return true
         end
 

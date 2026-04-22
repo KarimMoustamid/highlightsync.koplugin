@@ -4,11 +4,9 @@ services:
     container_name: koreader_webdav
     restart: always
     ports:
-      - "8080:80"
+      - "${WEBDAV_PORT:-8080}:80"
     environment:
-      # Change these to your preference
-      - USERNAME=karim
-      - PASSWORD=password123
+      - USERNAME=${WEBDAV_USERNAME}
+      - PASSWORD=${WEBDAV_PASSWORD}
     volumes:
-      # Map your existing KoReader folder to the container
-      - /Users/karimmoustamid/Desktop/KoReader:/var/lib/dav
+      - ./koreader-data:/var/lib/dav

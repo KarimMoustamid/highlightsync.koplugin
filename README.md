@@ -32,6 +32,8 @@ More devices may work — feel free to open an issue or pull request with your r
 - 📝 **True Offline Freedom:** Read and annotate on your Kindle and Boox separately; sync them all when you get Wi-Fi.
 - ☁️ Works with **WebDAV** and **Dropbox**.
 - 📅 **Smart Updates:** Syncs highlight edits based on the latest timestamp.
+- 🕐 **Last Synced Indicator:** The menu shows when the last successful sync occurred.
+- 📄 **Export to Markdown:** Export all highlights for the current book to a `.md` file grouped by chapter, ready for Obsidian or any note-taking app.
 - ⚡ **Lightweight** and easy to install.
 
 ---
@@ -104,6 +106,13 @@ KoReader Device  ──(WebDAV / local network)──►  Docker WebDAV Server  
 
 ### docker-compose.yml
 
+Credentials and port are read from a `.env` file (never committed). Copy `.env.example` to get started:
+
+```bash
+cp .env.example .env
+# then edit .env with your preferred username, password, and port
+```
+
 ```yaml
 services:
   webdav:
@@ -111,12 +120,12 @@ services:
     container_name: koreader_webdav
     restart: always
     ports:
-      - "8080:80"
+      - "${WEBDAV_PORT:-8080}:80"
     environment:
-      - USERNAME=your_username
-      - PASSWORD=your_password
+      - USERNAME=${WEBDAV_USERNAME}
+      - PASSWORD=${WEBDAV_PASSWORD}
     volumes:
-      - /path/to/your/KoReader/folder:/var/lib/dav
+      - ./koreader-data:/var/lib/dav
 ```
 
 > **Security note:** Change the password before exposing this server outside your local network.

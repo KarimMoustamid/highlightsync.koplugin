@@ -1,4 +1,6 @@
 data/
+koreader-data/
+.env
 .DS_Store
 DavLock
 DavLock.dir
