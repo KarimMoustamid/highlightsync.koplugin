@@ -144,25 +144,38 @@ docker compose down
 docker compose logs -f
 ```
 
-### Connecting KoReader (local network)
+### Connecting KoReader
+
+Use the config that matches your device's situation:
+
+| Scenario | URL | Folder |
+| --- | --- | --- |
+| Same WiFi / local network (no Tailscale needed) | `http://<host-local-ip>:8080` | `/` |
+| Anywhere via Tailscale | `http://<host-tailscale-ip>:8080` | `/` |
+
+> **Important:** The folder must be set to `/` (root). The `bytemark/webdav` image serves files from its root directly — there is no `/data` subfolder to navigate into.
+
+#### Option A — Local network (same WiFi)
+
+No extra software needed. Works for any device on the same network — Kindle, Kobo, phone.
 
 1. Find your host machine's local IP:
    - **macOS:** System Settings → Wi-Fi → Details
    - **Linux:** `ip addr` or `hostname -I`
    - **Windows:** `ipconfig` in a terminal
 2. In KoReader: **Tools → Cloud Storage → WebDAV**
-3. Enter `http://<host-ip>:8080`, your username, and password
+3. Enter `http://<host-local-ip>:8080`, your username, password, and `/` as the folder
 4. Tap **Sync**
 
-### Connecting KoReader from anywhere via Tailscale
+#### Option B — Anywhere via Tailscale
 
-KoReader runs on jailbroken/rooted devices (Kindle, Kobo, Boox, Android) — all of which can run Tailscale. This lets you sync to your host machine over a secure WireGuard tunnel from anywhere, with no port forwarding and no public exposure.
+KoReader runs on jailbroken/rooted devices (Kindle, Kobo, Boox, Android) — all of which can run Tailscale. This lets you sync from anywhere over a secure WireGuard tunnel with no port forwarding and no public exposure.
 
-1. Install [Tailscale](https://tailscale.com) on your host machine and on your KoReader device
+1. Install [Tailscale](https://tailscale.com) on both your host machine and your KoReader device
 2. Sign in to the same Tailscale account on both
-3. Find your host's Tailscale IP (e.g. `100.x.x.x`) in the Tailscale app or dashboard
+3. Find your host's Tailscale IP (`100.x.x.x`) in the Tailscale app or dashboard
 4. In KoReader: **Tools → Cloud Storage → WebDAV**
-5. Enter `http://100.x.x.x:8080`, your username, and password
+5. Enter `http://100.x.x.x:8080`, your username, password, and `/` as the folder
 6. Tap **Sync** — works from any network
 
 > The WebDAV server does not need any firewall changes or port forwarding. Tailscale handles the secure tunnel automatically.
